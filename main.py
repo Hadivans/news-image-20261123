@@ -363,15 +363,23 @@ def build():
 
 def main():
     img = build()
-    out = "/output/entry.png"
-    try:
-        os.makedirs("/output", exist_ok=True)
-        img.save(out, format="PNG", optimize=True)
-    except OSError:
-        out = os.path.join(BASE, "output", "entry.png")
-        os.makedirs(os.path.dirname(out), exist_ok=True)
-        img.save(out, format="PNG", optimize=True)
-    print("wrote", out, img.size)
+    candidates = []
+    env_dir = os.environ.get("MAKEFUN_OUTPUT_DIR")
+    if env_dir:
+        candidates.append(os.path.join(env_dir, "entry.png"))
+    candidates.append("/output/entry.png")
+    candidates.append(os.path.join(BASE, "output", "entry.png"))
+    last_err = None
+    for out in candidates:
+        try:
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            img.save(out, format="PNG", optimize=True)
+        except OSError as exc:
+            last_err = exc
+            continue
+        print("wrote", out, img.size)
+        return
+    raise last_err
 
 
 if __name__ == "__main__":
